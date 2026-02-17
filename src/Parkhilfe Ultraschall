@@ -1,0 +1,108 @@
+const byte trigPins[] = {2, 4, 8, 10, 12 };
+const byte echoPins[] = {3, 5, 9, 11, 13 };
+const byte sensorCount = 5;
+const byte ledPin = 7;
+const byte buzzerPin = 6;
+void setup() 
+{  // Alle Pins setzen
+ for (byte i = 0; i < sensorCount; i++) 
+ {
+    pinMode(trigPins[i], OUTPUT);
+    digitalWrite(trigPins[i], LOW);
+    pinMode(echoPins[i], INPUT);
+  }
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  Serial.begin(115200);
+}
+
+  uint32_t buzzer_delay = 0;  // Bei ungleich 0: düddel
+
+void loop() 
+{
+  uint32_t jetzt = millis();
+
+  if(buzzer_delay > 0)
+  {
+    static uint32_t vorherigeZeit = 0;
+    if (jetzt - vorherigeZeit >= buzzer_delay) 
+    {
+
+      tone(buzzerPin, 1500, 20);  // 1kHz Ton erzeugen
+
+      vorherigeZeit = jetzt;
+    }
+  }
+
+    int minDistance = 10000;
+   for (byte i = 0; i < sensorCount; i++) 
+   {
+    int distance = calculateDistance(i);
+    if (distance == -2) return;   // noch nicht bereit
+    if (distance >= 0 && distance < minDistance) 
+    {
+      minDistance = distance;
+    }
+
+    //delay(50); // Wichtig gegen Ultraschall-Übersprechen
+   }
+  const int nahe = 100, extremnahe = 25;
+  const int schnell = 100, langsam = 1000; // ms buss-delay
+
+  // Rote LED blinkt wenn Distanz kleiner ist als 20cm,sonst grüne LED leuchtet konstant
+  static bool warNahe = false;
+  bool istNahe = (minDistance >= 0 && minDistance < nahe);
+
+
+ 
+ 
+  
+
+  int bright;
+  if (istNahe)
+  {
+    Serial.println(minDistance);
+    buzzer_delay = map(minDistance, nahe, extremnahe, langsam, schnell);
+    buzzer_delay = constrain(buzzer_delay, schnell, langsam);
+
+    bright = map(minDistance, nahe, extremnahe, 10, 255);
+    bright = constrain(bright, 0, 255);
+
+  } else {
+    buzzer_delay = 0; // AUS
+    bright = 0;
+  }
+
+  analogWrite(ledPin, bright);
+  //digitalWrite(ledPin, istNahe ? HIGH : LOW);
+
+  warNahe = istNahe;
+
+  /*
+    if (!istNahe) 
+    {
+      Serial.println("Alles sauber");
+    } */
+}
+
+int calculateDistance(byte sensor) {
+
+  static uint32_t next_ok[5] = {0,0,0,0,0};
+
+  if (millis() < next_ok[sensor])
+    return -2;
+
+  digitalWrite(trigPins[sensor], HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPins[sensor], LOW);
+
+  long duration = pulseIn(echoPins[sensor], HIGH, 5000);
+
+  next_ok[sensor] = millis() + 60; // 60ms Pause pro Sensor
+
+  if (duration == 0)
+    return -1;
+
+  return duration * 0.330 / 2;  // Distanz in mm
+}
+
