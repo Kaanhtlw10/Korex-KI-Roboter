@@ -12,6 +12,13 @@ const int motoren[] = {18, 19, 20, 21};
 Servo servo;
 int servoWinkel = 75;
 
+const byte trigPins[] = {2, 4, 8, 10, 12};
+const byte echoPins[] = {3, 5, 9, 11, 13};
+const byte sensorCount = 5;
+const int ledPin = 7;
+const int buzzerPin = 6;
+uint32_t buzzerDelay = 0;
+
 unsigned long letzteZeit = 0;
 int intervall = 100;
 
@@ -64,6 +71,25 @@ void rechts() {
   }
 }
 
+int berechneDistanz(byte sensor) {
+  static uint32_t nextOK[5] = {0, 0, 0, 0, 0};
+
+  if(millis() < nextOK[sensor]) {
+    return -2;
+  }
+
+  digitalWrite(trigPins[sensor], HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPins[sensor], LOW);
+
+  long dauer = pulseIn(echoPins[sensor], HIGH, 5000);
+  nextOK[sensor] = millis() + 60;
+  if(dauer == 0) {
+    return -1;
+  }
+  return (dauer * 0.330 / 2);
+}
+
 class MyCallbacks: public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     std::string value = pCharacteristic->getValue();
@@ -80,7 +106,9 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         links();
       } else if(c == 'R') {
         rechts();
-      } else if(c == 'S') {
+      } else if(c == 'C') {
+        neutral();
+      } else if(c == 'A') {
         stopp();
         neutral();
       }
@@ -92,6 +120,14 @@ void setup() {
   for(int i = 0; i < 4; i++) {
     pinMode(motoren[i], OUTPUT);
   }
+  for(byte i = 0; i < sensorCount; i++) {
+    pinMode(trigPins[i], OUTPUT);
+    digitalWrite(trigPins[i], LOW);
+    pinMode(echoPins[i], INPUT);
+  }
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+
   servo.attach(35);
   servo.write(75);
 
@@ -113,6 +149,45 @@ void setup() {
 }
 
 void loop(){
+  uint32_t jetzt = millis();
+
+  if(buzzerDelay > 0) {
+    static uint32_t vorherigeZeit = 0;
+
+    if(jetzt - vorherigeZeit >= buzzerDelay) {
+      tone(buzzerPin, 1500, 20);
+      vorherigeZeit = jetzt;
+    }
+  }
+  int minDistanz = 10000;
+  for(byte i = 0; i < sensorCount; i++) {
+    int distanz = berechneDistanz(i);
+    if(distanz == -2) {
+      return;
+    }
+    if(distanz >= 0 && distanz < minDistanz) {
+      minDistanz = distanz;
+    }
+  }
+
+  const int nahe = 100, extremNahe = 25;
+  const int schnell = 50, langsam = 600;
+
+  static bool warNahe = false;
+  bool istNahe = (minDistanz >= 0 && minDistanz < nahe);
+  int hell;
+  if(istNahe) {
+    Serial.println(minDistanz);
+    buzzerDelay = map(minDistanz, nahe, extremNahe, langsam, schnell);
+    buzzerDelay = constrain(hell, 0, 255);
+  } else {
+    buzzerDelay = 0;
+    hell = 0;
+  }
+
+  analogWrite(ledPin, hell);
+  warNahe = istNahe;
+
   if(Serial.available()) {
     char c = Serial.read();
     if(c == 'V') {
