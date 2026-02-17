@@ -38,7 +38,7 @@ void loop()
    for (byte i = 0; i < sensorCount; i++) 
    {
     int distance = calculateDistance(i);
-    if (distance == -2) return;   // noch nicht bereit
+    if (distance == -2) continue;   // noch nicht bereit
     if (distance >= 0 && distance < minDistance) 
     {
       minDistance = distance;
@@ -47,7 +47,7 @@ void loop()
     //delay(50); // Wichtig gegen Ultraschall-Übersprechen
    }
   const int nahe = 100, extremnahe = 25;
-  const int schnell = 100, langsam = 1000; // ms buss-delay
+  const int schnell = 50, langsam = 600; // ms buss-delay
 
   // Rote LED blinkt wenn Distanz kleiner ist als 20cm,sonst grüne LED leuchtet konstant
   static bool warNahe = false;
@@ -73,7 +73,25 @@ void loop()
     bright = 0;
   }
 
-  analogWrite(ledPin, bright);
+  // LED blinkt mit gleicher Geschwindigkeit wie Buzzer
+static bool ledState = false;
+static uint32_t letzteLedZeit = 0;
+
+if (buzzer_delay > 0)
+{
+  if (jetzt - letzteLedZeit >= buzzer_delay)
+  {
+    ledState = !ledState;
+    digitalWrite(ledPin, ledState);
+    letzteLedZeit = jetzt;
+  }
+}
+else
+{
+  digitalWrite(ledPin, LOW);
+  ledState = false;
+}
+
   //digitalWrite(ledPin, istNahe ? HIGH : LOW);
 
   warNahe = istNahe;
