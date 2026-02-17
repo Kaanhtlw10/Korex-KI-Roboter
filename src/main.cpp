@@ -8,8 +8,12 @@
 #define SERVICE_UUID "FFE0"
 #define CHARACTERISTIC_UUID "FFE1"
 
-const int motoren[] = {18, 19, 20, 21};
+const int motoren[] = {18, 19, 20, 21};        
 Servo servo;
+int servoWinkel = 75;
+
+unsigned long letzteZeit = 0;
+int intervall = 100;
 
 BLECharacteristic *pCharacteristic;
 
@@ -37,17 +41,28 @@ void stopp() {
   }
 }
 
+void neutral() { //Neutrale Servo-Position --> 75°
+    servo.write(75);
+    servoWinkel = 75;
+}
+
 void links() {
-  servo.write(65);
+  unsigned long jetztigeZeit = millis();
+  if(jetztigeZeit - letzteZeit >= intervall) {
+    servo.write(110);
+    servoWinkel = 110;
+    letzteZeit = jetztigeZeit;
+  }
 }
 
 void rechts() {
-  digitalWrite(motoren[0], HIGH);
-  digitalWrite(motoren[1], LOW);
-  digitalWrite(motoren[2], LOW);
-  digitalWrite(motoren[3], HIGH);
+  unsigned long jetztigeZeit = millis();
+  if(jetztigeZeit - letzteZeit >= intervall) {
+    servo.write(40);
+    servoWinkel = 40;
+    letzteZeit = jetztigeZeit;
+  }
 }
-
 
 class MyCallbacks: public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
@@ -55,36 +70,19 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 
     if (value.length() > 0) {
       String data = String(value.c_str());
-      int commaIndex = data.indexOf(',');
-
-      if (commaIndex > 0) {
-        int x = data.substring(0, commaIndex).toInt();
-        int y = data.substring(commaIndex + 1).toInt();
-
-        if (y > 20) {
-          vorne();
-        }
-        else if (y < -20) {
-          hinten();
-        }
-        else if (x > 20) {
-          rechts();
-        }
-        else if (x < -20) {
-          links();
-        }
-        else {
-          stopp();
-        }
-      } else {
-        char c = value[0];
-        if(c == 'V') {
-          vorne();
-        } else if(c == 'H') {
-          hinten();
-        } else if(c == 'S') {
-          stopp();
-        }
+      int komma = data.indexOf(',');
+      char c = value[0];
+      if(c == 'U') {
+        vorne();
+      } else if(c == 'D') {
+        hinten();
+      } else if(c == 'L') {
+        links();
+      } else if(c == 'R') {
+        rechts();
+      } else if(c == 'S') {
+        stopp();
+        neutral();
       }
     }
   }
@@ -93,22 +91,22 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 void setup() {
   for(int i = 0; i < 4; i++) {
     pinMode(motoren[i], OUTPUT);
-    servo.attach(35);
   }
+  servo.attach(35);
+  servo.write(75);
 
   Serial.begin(115200);
 
-  BLEDevice::init("kiRoboter");
+  BLEDevice::init("Korex KI-Roboter");
   BLEServer *pServer = BLEDevice::createServer();
 
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
   pCharacteristic = 
   pService->createCharacteristic(
-  CHARACTERISTIC_UUID,
-  BLECharacteristic::PROPERTY_WRITE
+    CHARACTERISTIC_UUID,
+    BLECharacteristic::PROPERTY_WRITE
   );
-
   pCharacteristic->setCallbacks(new MyCallbacks());
   pService->start();
   pServer->getAdvertising()->start();
@@ -119,12 +117,15 @@ void loop(){
     char c = Serial.read();
     if(c == 'V') {
       vorne();
+      Serial.println("Vorne");
     } 
     else if(c == 'H') {
       hinten();
+      Serial.println("Hinten");
     }
     else if(c == 'S') {
       stopp();
+      Serial.println("Stopp");
     }
   }
 }
