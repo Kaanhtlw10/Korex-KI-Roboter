@@ -1,0 +1,237 @@
+#include <Arduino.h>
+#include <Servo.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+
+#define SERVICE_UUID "FFE0"
+#define CHARACTERISTIC_UUID "FFE1"
+
+const int motoren[] = {18, 19, 20, 21};        
+Servo servo;
+int servoWinkel = 75;
+
+const byte trigPins[] = {2, 4, 8, 10, 12};
+const byte echoPins[] = {3, 5, 9, 11, 13};
+const byte sensorCount = 5;
+const int ledPin = 7;
+const int buzzerPin = 6;
+const int buzzerKanal = 0;
+const int buzzerResolution = 8;
+const int buzzerFreq = 1500;
+bool buzzerAn = false;
+uint32_t buzzerStartZeit = 0;
+const uint16_t buzzerTonLaenge = 20;
+uint32_t buzzerDelay = 0;
+
+unsigned long letzteZeit = 0;
+int intervall = 100;
+
+BLECharacteristic *pCharacteristic;
+
+void vorne() {
+  for(int i = 0; i < 2; i++) {
+    digitalWrite(motoren[i], HIGH);
+  }
+  for(int j = 2; j < 4; j++) {
+    digitalWrite(motoren[j], LOW);
+  }
+}
+
+void hinten() {
+  for(int i = 2; i < 4; i++) {
+    digitalWrite(motoren[i], HIGH);
+  }
+  for(int j = 0; j < 2; j++) {
+    digitalWrite(motoren[j], LOW);
+  }
+}
+
+void stopp() {
+  for(int i = 0; i < 4; i++) {
+    digitalWrite(motoren[i], LOW);
+  }
+}
+
+void neutral() { //Neutrale Servo-Position --> 75°
+    servo.write(75);
+    servoWinkel = 75;
+}
+
+void links() {
+  unsigned long jetztigeZeit = millis();
+  if(jetztigeZeit - letzteZeit >= intervall) {
+    servo.write(110);
+    servoWinkel = 110;
+    letzteZeit = jetztigeZeit;
+  }
+}
+
+void rechts() {
+  unsigned long jetztigeZeit = millis();
+  if(jetztigeZeit - letzteZeit >= intervall) {
+    servo.write(40);
+    servoWinkel = 40;
+    letzteZeit = jetztigeZeit;
+  }
+}
+
+int berechneDistanz(byte sensor) {
+  static uint32_t nextOK[5] = {0, 0, 0, 0, 0};
+
+  if(millis() < nextOK[sensor]) {
+    return -2;
+  }
+
+  digitalWrite(trigPins[sensor], HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPins[sensor], LOW);
+
+  long dauer = pulseIn(echoPins[sensor], HIGH, 5000);
+  nextOK[sensor] = millis() + 60;
+  if(dauer == 0) {
+    return -1;
+  }
+  return (dauer * 0.330 / 2);
+}
+
+class MyCallbacks: public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *pCharacteristic) {
+    std::string value = pCharacteristic->getValue();
+
+    if (value.length() > 0) {
+      String data = String(value.c_str());
+      int komma = data.indexOf(',');
+      char c = value[0];
+      if(c == 'U') {
+        vorne();
+      } else if(c == 'D') {
+        hinten();
+      } else if(c == 'L') {
+        links();
+      } else if(c == 'R') {
+        rechts();
+      } else if(c == 'C') {
+        neutral();
+      } else if(c == 'A') {
+        stopp();
+        neutral();
+      }
+    }
+  }
+};
+
+void setup() {
+  for(int i = 0; i < 4; i++) {
+    pinMode(motoren[i], OUTPUT);
+  }
+  digitalWrite(echoPins[1], HIGH);
+  for(byte i = 0; i < sensorCount; i++) {
+    pinMode(trigPins[i], OUTPUT);
+    digitalWrite(trigPins[i], LOW);
+    pinMode(echoPins[i], INPUT);
+  }
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  ledcSetup(buzzerKanal, buzzerFreq, buzzerResolution);
+  ledcAttachPin(buzzerPin, buzzerKanal);
+
+  servo.attach(35);
+  servo.write(75);
+
+  Serial.begin(115200);
+
+  BLEDevice::init("Korex KI-Roboter");
+  BLEServer *pServer = BLEDevice::createServer();
+
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+
+  pCharacteristic = 
+  pService->createCharacteristic(
+    CHARACTERISTIC_UUID,
+    BLECharacteristic::PROPERTY_WRITE
+  );
+  pCharacteristic->setCallbacks(new MyCallbacks());
+  pService->start();
+  pServer->getAdvertising()->start();
+}
+
+void loop(){
+  uint32_t jetzt = millis();
+
+  if(buzzerDelay > 0) {
+    static uint32_t vorherigeZeit = 0;
+      // tone(buzzerPin, 1500, 20);
+      if(!buzzerAn && (jetzt - buzzerStartZeit >= buzzerDelay)) {
+        ledcWrite(buzzerKanal, 128);
+        buzzerAn = true;
+        buzzerStartZeit = jetzt;
+      }
+      if(buzzerAn && (jetzt - buzzerStartZeit >= buzzerTonLaenge)) {
+        ledcWrite(buzzerKanal, 0);
+        buzzerAn = false;
+        buzzerStartZeit = jetzt;
+      }
+  } else {
+      ledcWrite(buzzerKanal, 0);
+      buzzerAn = false;
+    }
+  int minDistanz = 10000;
+  for(byte i = 0; i < sensorCount; i++) {
+    int distanz = berechneDistanz(i);
+    if(distanz == -2) {
+      continue;
+    }
+    if(distanz >= 0 && distanz < minDistanz) {
+      minDistanz = distanz;
+    }
+  }
+
+  const int nahe = 100, extremNahe = 25;
+  const int schnell = 50, langsam = 600;
+
+  static bool warNahe = false;
+  bool istNahe = (minDistanz >= 0 && minDistanz < nahe);
+  int hell;
+  if(istNahe) {
+    Serial.println(minDistanz);
+    buzzerDelay = map(minDistanz, nahe, extremNahe, langsam, schnell);
+    buzzerDelay = constrain(buzzerDelay, schnell, langsam);
+  } else {
+    buzzerDelay = 0;
+    hell = 0;
+  }
+
+  static bool ledZustand = false;
+  static uint32_t letzteLedZeit = 0;
+
+  if(buzzerDelay > 0) {
+    if(jetzt - letzteLedZeit >= buzzerDelay) {
+      ledZustand = !ledZustand;
+      digitalWrite(ledPin, ledZustand);
+      letzteLedZeit = jetzt;
+    }
+  } else {
+    digitalWrite(ledPin, LOW);
+    ledZustand = false;
+  }
+
+  warNahe = istNahe;
+
+  if(Serial.available()) {
+    char c = Serial.read();
+    if(c == 'V') {
+      vorne();
+      Serial.println("Vorne");
+    } 
+    else if(c == 'H') {
+      hinten();
+      Serial.println("Hinten");
+    }
+    else if(c == 'S') {
+      stopp();
+      Serial.println("Stopp");
+    }
+  }
+}
