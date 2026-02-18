@@ -8,15 +8,22 @@
 #define SERVICE_UUID "FFE0"
 #define CHARACTERISTIC_UUID "FFE1"
 
-const int motoren[] = {18, 19, 20, 21};        
+const int motorenVorne[] = {18, 19, 20, 21};   
+const int motorenHinten[] = {37, 38, 39, 40};     
 Servo servo;
 int servoWinkel = 75;
 
 const byte trigPins[] = {2, 4, 8, 10, 12};
-const byte echoPins[] = {3, 5, 9, 11, 13};
+const byte echoPins[] = {7, 5, 9, 11, 13};
 const byte sensorCount = 5;
 const int ledPin = 7;
 const int buzzerPin = 6;
+const int buzzerKanal = 0;
+const int buzzerResolution = 8;
+const int buzzerFreq = 1500;
+bool buzzerAn = false;
+uint32_t buzzerStartZeit = 0;
+const uint16_t buzzerTonLaenge = 20;
 uint32_t buzzerDelay = 0;
 
 unsigned long letzteZeit = 0;
@@ -26,25 +33,25 @@ BLECharacteristic *pCharacteristic;
 
 void vorne() {
   for(int i = 0; i < 2; i++) {
-    digitalWrite(motoren[i], HIGH);
+    digitalWrite(motorenVorne[i], HIGH);
   }
   for(int j = 2; j < 4; j++) {
-    digitalWrite(motoren[j], LOW);
+    digitalWrite(motorenVorne[j], LOW);
   }
 }
 
 void hinten() {
   for(int i = 2; i < 4; i++) {
-    digitalWrite(motoren[i], HIGH);
+    digitalWrite(motorenVorne[i], HIGH);
   }
   for(int j = 0; j < 2; j++) {
-    digitalWrite(motoren[j], LOW);
+    digitalWrite(motorenVorne[j], LOW);
   }
 }
 
 void stopp() {
   for(int i = 0; i < 4; i++) {
-    digitalWrite(motoren[i], LOW);
+    digitalWrite(motorenVorne[i], LOW);
   }
 }
 
@@ -118,7 +125,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 
 void setup() {
   for(int i = 0; i < 4; i++) {
-    pinMode(motoren[i], OUTPUT);
+    pinMode(motorenVorne[i], OUTPUT);
   }
   for(byte i = 0; i < sensorCount; i++) {
     pinMode(trigPins[i], OUTPUT);
@@ -127,6 +134,8 @@ void setup() {
   }
   pinMode(ledPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
+  ledcSetup(buzzerKanal, buzzerFreq, buzzerResolution);
+  ledcAttachPin(buzzerPin, buzzerKanal);
 
   servo.attach(35);
   servo.write(75);
@@ -153,17 +162,26 @@ void loop(){
 
   if(buzzerDelay > 0) {
     static uint32_t vorherigeZeit = 0;
-
-    if(jetzt - vorherigeZeit >= buzzerDelay) {
-      tone(buzzerPin, 1500, 20);
-      vorherigeZeit = jetzt;
+      // tone(buzzerPin, 1500, 20);
+      if(!buzzerAn && (jetzt - buzzerStartZeit >= buzzerDelay)) {
+        ledcWrite(buzzerKanal, 128);
+        buzzerAn = true;
+        buzzerStartZeit = jetzt;
+      }
+      if(buzzerAn && (jetzt - buzzerStartZeit >= buzzerTonLaenge)) {
+        ledcWrite(buzzerKanal, 0);
+        buzzerAn = false;
+        buzzerStartZeit = jetzt;
+      }
+  } else {
+      ledcWrite(buzzerKanal, 0);
+      buzzerAn = false;
     }
-  }
   int minDistanz = 10000;
   for(byte i = 0; i < sensorCount; i++) {
     int distanz = berechneDistanz(i);
     if(distanz == -2) {
-      return;
+      continue;
     }
     if(distanz >= 0 && distanz < minDistanz) {
       minDistanz = distanz;
@@ -179,13 +197,26 @@ void loop(){
   if(istNahe) {
     Serial.println(minDistanz);
     buzzerDelay = map(minDistanz, nahe, extremNahe, langsam, schnell);
-    buzzerDelay = constrain(hell, 0, 255);
+    buzzerDelay = constrain(buzzerDelay, schnell, langsam);
   } else {
     buzzerDelay = 0;
     hell = 0;
   }
 
-  analogWrite(ledPin, hell);
+  static bool ledZustand = false;
+  static uint32_t letzteLedZeit = 0;
+
+  if(buzzerDelay > 0) {
+    if(jetzt - letzteLedZeit >= buzzerDelay) {
+      ledZustand = !ledZustand;
+      digitalWrite(ledPin, ledZustand);
+      letzteLedZeit = jetzt;
+    }
+  } else {
+    digitalWrite(ledPin, LOW);
+    ledZustand = false;
+  }
+
   warNahe = istNahe;
 
   if(Serial.available()) {
