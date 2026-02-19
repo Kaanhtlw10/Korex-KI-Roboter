@@ -8,18 +8,16 @@
 #define SERVICE_UUID "FFE0"
 #define CHARACTERISTIC_UUID "FFE1"
 
-const int motoren[] = {18, 19, 20, 21};        
+const int motorenVorne[] = {18, 19, 20, 21};   
+const int motorenHinten[] = {37, 38, 39, 40};     
 Servo servo;
 int servoWinkel = 75;
 
 const byte trigPins[] = {2, 4, 8, 10, 12};
-const byte echoPins[] = {3, 5, 9, 11, 13};
-const byte sensorCount = 5;
-const int ledPin = 7;
+const byte echoPins[] = {7, 5, 9, 11, 13};
+const byte sensorCount = 5;  
+const int ledPin = 8;
 const int buzzerPin = 6;
-const int buzzerKanal = 0;
-const int buzzerResolution = 8;
-const int buzzerFreq = 1500;
 bool buzzerAn = false;
 uint32_t buzzerStartZeit = 0;
 const uint16_t buzzerTonLaenge = 20;
@@ -32,25 +30,40 @@ BLECharacteristic *pCharacteristic;
 
 void vorne() {
   for(int i = 0; i < 2; i++) {
-    digitalWrite(motoren[i], HIGH);
+    digitalWrite(motorenVorne[i], HIGH);
   }
-  for(int j = 2; j < 4; j++) {
-    digitalWrite(motoren[j], LOW);
+  for(int i = 2; i < 4; i++) {
+    digitalWrite(motorenVorne[i], LOW);
   }
-}
+  for(int i = 0; i < 2; i++) {
+    digitalWrite(motorenHinten[i], HIGH);
+  }
+  for(int i = 2; i < 4; i++) {
+    digitalWrite(motorenHinten[i], LOW);
+  }
+}                     
 
 void hinten() {
   for(int i = 2; i < 4; i++) {
-    digitalWrite(motoren[i], HIGH);
+    digitalWrite(motorenVorne[i], HIGH);
   }
-  for(int j = 0; j < 2; j++) {
-    digitalWrite(motoren[j], LOW);
+  for(int i = 0; i < 2; i++) {
+    digitalWrite(motorenVorne[i], LOW);
+  }
+  for(int i = 2; i < 4; i++) {
+    digitalWrite(motorenHinten[i], HIGH);
+  }
+  for(int i = 0; i < 2; i++) {
+    digitalWrite(motorenHinten[i], LOW);
   }
 }
 
 void stopp() {
   for(int i = 0; i < 4; i++) {
-    digitalWrite(motoren[i], LOW);
+    digitalWrite(motorenVorne[i], LOW);
+  }
+  for(int i = 0; i < 4; i++) {
+    digitalWrite(motorenHinten[i], LOW);
   }
 }
 
@@ -62,8 +75,7 @@ void neutral() { //Neutrale Servo-Position --> 75°
 void links() {
   unsigned long jetztigeZeit = millis();
   if(jetztigeZeit - letzteZeit >= intervall) {
-    servo.write(110);
-    servoWinkel = 110;
+    
     letzteZeit = jetztigeZeit;
   }
 }
@@ -123,10 +135,12 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 };
 
 void setup() {
+   Serial.begin(115200);
+   Serial.println("KOREX-KI-Roboter v1.0");
   for(int i = 0; i < 4; i++) {
-    pinMode(motoren[i], OUTPUT);
+    pinMode(motorenVorne[i], OUTPUT);
+    pinMode(motorenHinten[i], OUTPUT);
   }
-  digitalWrite(echoPins[1], HIGH);
   for(byte i = 0; i < sensorCount; i++) {
     pinMode(trigPins[i], OUTPUT);
     digitalWrite(trigPins[i], LOW);
@@ -134,17 +148,12 @@ void setup() {
   }
   pinMode(ledPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
-  ledcSetup(buzzerKanal, buzzerFreq, buzzerResolution);
-  ledcAttachPin(buzzerPin, buzzerKanal);
 
   servo.attach(35);
   servo.write(75);
 
-  Serial.begin(115200);
-
   BLEDevice::init("Korex KI-Roboter");
   BLEServer *pServer = BLEDevice::createServer();
-
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
   pCharacteristic = 
@@ -162,24 +171,17 @@ void loop(){
 
   if(buzzerDelay > 0) {
     static uint32_t vorherigeZeit = 0;
-      // tone(buzzerPin, 1500, 20);
-      if(!buzzerAn && (jetzt - buzzerStartZeit >= buzzerDelay)) {
-        ledcWrite(buzzerKanal, 128);
-        buzzerAn = true;
-        buzzerStartZeit = jetzt;
-      }
-      if(buzzerAn && (jetzt - buzzerStartZeit >= buzzerTonLaenge)) {
-        ledcWrite(buzzerKanal, 0);
-        buzzerAn = false;
-        buzzerStartZeit = jetzt;
-      }
-  } else {
-      ledcWrite(buzzerKanal, 0);
-      buzzerAn = false;
+
+    if (jetzt - vorherigeZeit >= buzzerDelay) 
+    {
+      tone(buzzerPin, 1500, 20);
+      vorherigeZeit = jetzt;
     }
+  }
   int minDistanz = 10000;
   for(byte i = 0; i < sensorCount; i++) {
     int distanz = berechneDistanz(i);
+
     if(distanz == -2) {
       continue;
     }
@@ -198,6 +200,8 @@ void loop(){
     Serial.println(minDistanz);
     buzzerDelay = map(minDistanz, nahe, extremNahe, langsam, schnell);
     buzzerDelay = constrain(buzzerDelay, schnell, langsam);
+
+    hell = map(minDistanz, nahe, extremNahe, 10, 255);
   } else {
     buzzerDelay = 0;
     hell = 0;
@@ -218,7 +222,6 @@ void loop(){
   }
 
   warNahe = istNahe;
-
   if(Serial.available()) {
     char c = Serial.read();
     if(c == 'V') {
