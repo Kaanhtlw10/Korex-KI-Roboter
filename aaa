@@ -8,8 +8,8 @@
 #define SERVICE_UUID "FFE0"
 #define CHARACTERISTIC_UUID "FFE1"
 
-const int motorenVorne[] = {18, 19, 20, 21};   
-const int motorenHinten[] = {37, 38, 39, 40};     
+const int motorenVorne[] = {18, 19, 20, 21}; //vorne, vorne, hinten, hinten
+const int motorenHinten[] = {37, 38, 39, 40}; //vorne, vorne, hinten, hinten
 Servo servo;
 int servoWinkel = 75;
 
@@ -75,7 +75,10 @@ void neutral() { //Neutrale Servo-Position --> 75°
 void links() {
   unsigned long jetztigeZeit = millis();
   if(jetztigeZeit - letzteZeit >= intervall) {
-    
+    digitalWrite(motorenHinten[0], LOW);
+    digitalWrite(motorenVorne[0], LOW);
+    digitalWrite(motorenHinten[1], HIGH);
+    digitalWrite(motorenVorne[1], HIGH);
     letzteZeit = jetztigeZeit;
   }
 }
@@ -83,8 +86,10 @@ void links() {
 void rechts() {
   unsigned long jetztigeZeit = millis();
   if(jetztigeZeit - letzteZeit >= intervall) {
-    servo.write(40);
-    servoWinkel = 40;
+    digitalWrite(motorenHinten[1], LOW);
+    digitalWrite(motorenVorne[1], LOW);
+    digitalWrite(motorenHinten[0], HIGH);
+    digitalWrite(motorenVorne[0], HIGH);
     letzteZeit = jetztigeZeit;
   }
 }
@@ -135,8 +140,9 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 };
 
 void setup() {
-   Serial.begin(115200);
-   Serial.println("KOREX-KI-Roboter v1.0");
+  Serial.begin(115200);
+  Serial.println("KOREX-KI-Roboter v1.0");
+
   for(int i = 0; i < 4; i++) {
     pinMode(motorenVorne[i], OUTPUT);
     pinMode(motorenHinten[i], OUTPUT);
@@ -191,7 +197,7 @@ void loop(){
   }
 
   const int nahe = 100, extremNahe = 25;
-  const int schnell = 50, langsam = 600;
+  const int schnell = 25, langsam = 600;
 
   static bool warNahe = false;
   bool istNahe = (minDistanz >= 0 && minDistanz < nahe);
