@@ -1,0 +1,60 @@
+#include <Arduino.h>
+#include <SPI.h>
+
+#define MOSI 23
+#define MISO 19
+#define SCLK 18
+#define CS 5
+
+#define TX_CC1101 0x3F //Adresse des Sendespeichers aus dem Datenblatt
+#define STX_CC1101 0x35 //Sendebefehl aus dem Datenblatt
+#define CC1101_ResetAdresse 0x30 //Chip zurücksetzen
+
+const int TasterPin = 15;
+
+void cc1101_resetPin() {
+  digitalWrite(CS, HIGH);
+  delay(1);
+
+  digitalWrite(CS, LOW);
+  digitalWrite(CS, HIGH);
+  delay(1);
+  digitalWrite(CS, LOW);
+
+  while(digitalRead(MISO)){}
+  SPI.transfer(CC1101_ResetAdresse);
+  digitalWrite(CS, HIGH);
+} 
+
+void setup() {
+  Serial.begin(115200);
+
+  SPI.begin(SCLK, MISO, MOSI, CS);
+  SPI.beginTransaction(SPISettings(6000000, MSBFIRST, SPI_MODE0));
+  
+  pinMode(CS, OUTPUT);
+  pinMode(MISO, INPUT);
+  digitalWrite(CS, HIGH);
+  cc1101_resetPin();
+
+  pinMode(TasterPin, INPUT_PULLUP);
+}
+
+void loop() {
+  if(digitalRead(TasterPin) == LOW) {
+    Serial.println("Taster gedrückt");
+
+    byte tasterWert = 1;
+
+    digitalWrite(CS, LOW);
+    SPI.transfer(TX_CC1101 | 0x40); //Burst Befehl
+    SPI.transfer(1);
+    SPI.transfer(tasterWert);
+    digitalWrite(CS, HIGH);
+
+    digitalWrite(CS, LOW);
+    SPI.transfer(STX_CC1101);
+    digitalWrite(CS, HIGH);
+    delay(200);
+  }
+}
