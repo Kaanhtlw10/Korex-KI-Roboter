@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<style>
+			#Titel { 
+				font-family: "ATC arquette", Arial, sans-serif;
+				font-weight: 700;
+				font-style: normal;
+				text-align:center;}
+				
+			#head1 {
+				font-family: "ATC arquette", Arial, sans-serif;
+				font-style: normal;
+				font-weight: 600;
+				font-size: 18px;
+			}
+				
+			.RegularT {
+				font-family: ATC arquette", Arial, sans-serif;
+				font-style: normal;
+				font-weight:10;
+				margin-top:2px;
+				font-size: 16px;}
+				
+			.box   {
+				background: lightgray;  
+				border: 1px solid gray; 
+				border-radius: 12px;    
+				padding: 20px;          
+				margin-bottom: 5px;}
+			
+			.bar   {
+				display:flex;
+				gap: 3px;
+				justify-content: center;}
+			
+			.buttonT {
+				background-color: #808080;
+				color: white;
+				font-size: 15 px;
+				padding: 15px;
+				border: red;
+				border-radius: 10px;
+				cursor:pointer;}
+				
+			.borderTop {
+				display:block;
+				border-style:solid;
+				border-width:0.2em;
+				margin-left:0px;
+				margin-top:-5px;
+				margin-bottom:10px}
+				
+			.seite {
+				display: none;}
+				
+			.seite.aktiv {
+				display: block;}
+		
+		</style>
+
+		<h1 id="Titel"> Korex der Roboter </h1> <!-- Der Titel zur Website -->
+			<p style="text-align:center;">Das ist die Website zum Diplomprojekt "Korex der Roboter"</p> <!-- Sub-Titel --> 
+
+<hr class="borderTop">
+
+			<div class="bar">
+				<button class="buttonT" onclick="zeige('info')">Informationen</button>
+				<button class="buttonT" onclick="zeige('sensoren')">Sensor Daten</button>
+				<button class="buttonT" onclick="zeige('credits')">Credits</button>
+			</div>
+
+
+				<div id= "info" class="seite aktiv">
+				
+					<p><!--Description unter Knöpfen-->
+						Hier sind generelle Informationen zu Korex, wie wir auf die Idee gekommen sind und wieso wir wollen,
+						dass dieses Projekt erfolgreich abschließt.
+					</p>
+					
+						<div class="box" id="head1">
+							Was ist Korex? <!--Bearbeiteter titel der ersten Box-->
+								<p class="RegularT"> <!--Text zu ersten Box-->
+									Korex ist ein ferngesteuerter, interaktiver Roboter, der mittels Frequenzsignale über einen Kontroller gesteuert werden kann.<br> 
+									Korex kann ebenso dank der eingebauten Lautsprecher und Mikrofon Gespräche führen.
+								</p>
+						</div>
+					
+						<div class="box" id="head1" style="margin-bottom:6px"> <!--Bearbeiteter titel der zweiten Box-->
+							Wie sind wir auf Korex gekommen? 
+								<p class="RegularT"> <!--Text zur zweiten Box-->
+									Korex war der Resultat von einer Besprechung, was wir für die Projektwoche machen. Wir fanden die Idee lustig und Interessant,
+									also haben wir die Idee auch umgesetzt. Durch Teamarbeit und aufteilung der Aufgaben untereinander auf Erfahrung erfolgte der erste Prototyp für Korex.
+								</p>
+						</div>
+						
+					<div class="box" id="head1">Textfeld3</div>
+					
+				</div>
+				
+				<div id="sensoren" class="seite">
+					<p>Hier sind die Rohsensorwerte</p>
+						<div class="box">Hier kommen die Sensor Daten hin.</div>
+				</div>
+		 
+				<div id="credits" class="seite">
+					<p>Hier sind die Projektteammitglieder und was sie Beitragen</p>
+					<div class="box">Hier kommen die Projektmitarbeiter hin.</div>
+				</div>
+
+		<script>
+			function zeige(id) {
+				var seiten = document.getElementsByClassName("seite");
+				for (var i = 0; i < seiten.length; i++) {
+					seiten[i].classList.remove("aktiv");}
+				
+				document.getElementById(id).classList.add("aktiv");}
+		
+		</script>
+
+		
+		
+	</body>
+</html>
