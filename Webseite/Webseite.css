@@ -1,0 +1,57 @@
+
+			#Titel { 
+				font-family: "ATC arquette", Arial, sans-serif;
+				font-weight: 700;
+				font-style: normal;
+				text-align:center;}
+				
+			#head1 {
+				font-family: "ATC arquette", Arial, sans-serif;
+				font-style: normal;
+				font-weight: 600;
+				font-size: 18px;
+			}
+				
+			.RegularT {
+				font-family: "ATC arquette", Arial, sans-serif;
+				font-style: normal;
+				font-weight:10;
+				margin-top:2px;
+				font-size: 16px;}
+				
+			.box   {
+				background: lightgray;  
+				border: 1px solid gray; 
+				border-radius: 12px;    
+				padding: 20px;          
+				margin-bottom: 5px;}
+			
+			.bar   {
+				display:flex;
+				gap: 3px;
+				justify-content: center;}
+			
+			.buttonT {
+				background-color: #808080;
+				color: white;
+				font-size: 15 px;
+				padding: 15px;
+				border: red;
+				border-radius: 10px;
+				cursor:pointer;}
+				
+			.borderTop {
+				display:block;
+				border-style:solid;
+				border-width:0.2em;
+				margin-left:0px;
+				margin-top:-5px;
+				margin-bottom:10px}
+				
+			.seite {
+				display: none;}
+				
+			.seite.aktiv {
+				display: block;}
+		
+	
