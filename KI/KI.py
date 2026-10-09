@@ -1,2 +1,2 @@
-print("Hello World!")
-print("wa")
+print("Hallo ich bin Korex")
+# Ich mag die farbe blau
