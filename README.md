@@ -12,19 +12,19 @@ Fotos und Videos aufnehmen kann und sich mit Menschen unterhalten kann.
 - **Display:** Auf dem Bildschirm an seinem Körper wird sein Gesicht gezeigt.
   Außerdem zeigt er dort Bilder, die zu einer gestellten Frage passen.
 
-## Controller
+## Kontroller
 
-Der Controller wurde im Projekt selbst entwickelt. Als Antenne dient eine
+Der Kontroller wurde im Projekt selbst von uns entwickelt. Als Antenne dient eine
 MIFA (Meandered Inverted-F Antenna), eine PCB-Antenne, die direkt auf der
-Platine sitzt.
+Platine des Kontrollers sitzt.
 
 ## Stromversorgung
 
-Korex läuft mit einer Batterie.
+Korex läuft mit einer wieder-aufladbaren 12V Blei-Batterie. Diese bietet 7 Ampere Stunden.
 
 ## Verwandte Projekte
 
-Das Schwesterprojekt **Lorex** ist ein autonomer Roboter.
+Das Schwesterprojekt **Lorex** ist ein autonomer Roboter, der Daten mit Korex überträgt.
 
 ## Aufbau des Repositories
 
