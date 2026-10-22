@@ -55,7 +55,11 @@
 				display: block;}
 
 			body {
-				background-image: url()
+				background-image: url('images/Background1.png');
+				background-repeat: no-repeat;
+				background-size: cover;
+				background-position: center;
+				background-attachment: fixed;
 			}
 		
 	
