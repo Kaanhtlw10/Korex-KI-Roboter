@@ -15,15 +15,15 @@ HTML_PAGE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Raspberry Pi Live-Stream</title>
+    <title>Raspberry Pi Kamera Live-Übertragung</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #222; color: #fff; margin-top: 50px; }
-        img { border: 2px solid #fff; border-radius: 8px; }
+        img { border: 6px solid #fff; border-radius: 12px; }
     </style>
 </head>
 <body>
-    <h1>Raspberry Pi Kamera Live-Stream (Modul 3)</h1>
-    <img src="/video_feed" width="640" height="480">
+    <h1>Raspberry Pi Kamera Live-Übertragung (Modul 3)</h1>
+    <img src="/video_feed" width="1000" height="600">
 </body>
 </html>
 """
