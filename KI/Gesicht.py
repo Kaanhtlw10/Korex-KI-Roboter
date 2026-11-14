@@ -5,7 +5,7 @@ import pygame
 
 WIDTH, HEIGHT = 800, 600
 BLACK = (0, 0, 0)
-CYAN = (0, 255, 255)
+BLUE = (0, 50, 200)
 
 screen = None
 clock = None
@@ -83,16 +83,16 @@ def draw_face():
 
     if is_blinking:
         # Wenn er blinzelt: Nur horizontale Striche statt runder Augen
-        pygame.draw.line(screen, CYAN, (215, 250), (325, 250), 12)
-        pygame.draw.line(screen, CYAN, (475, 250), (585, 250), 12)
+        pygame.draw.line(screen, BLUE, (215, 250), (325, 250), 12)
+        pygame.draw.line(screen, BLUE, (475, 250), (585, 250), 12)
 
         # Augenbrauen leicht nach unten beim Blinzeln
-        pygame.draw.line(screen, CYAN, (210, 175), (320, 165), 12)
-        pygame.draw.line(screen, CYAN, (480, 165), (590, 175), 12)
+        pygame.draw.line(screen, BLUE, (210, 175), (320, 165), 12)
+        pygame.draw.line(screen, BLUE, (480, 165), (590, 175), 12)
     else:
         # Normale offene Augen (Äußerer Kreis)
-        pygame.draw.circle(screen, CYAN, left_eye_center, 55)
-        pygame.draw.circle(screen, CYAN, right_eye_center, 55)
+        pygame.draw.circle(screen, BLUE, left_eye_center, 55)
+        pygame.draw.circle(screen, BLUE, right_eye_center, 55)
 
         # Pupillen, die sich je nach Blickrichtung (gaze_offset) bewegen
         pupil_left = (left_eye_center[0] + gaze_offset_x, left_eye_center[1] + gaze_offset_y)
@@ -104,12 +104,12 @@ def draw_face():
 
         # Dynamische Augenbrauen (leicht geneigt je nach Blick)
         brow_tilt = gaze_offset_y // 2  # Augenbrauen bewegen sich leicht mit
-        pygame.draw.line(screen, CYAN, (210, 175 + brow_tilt), (320, 165 + brow_tilt), 12)
-        pygame.draw.line(screen, CYAN, (480, 165 + brow_tilt), (590, 175 + brow_tilt), 12)
+        pygame.draw.line(screen, BLUE, (210, 175 + brow_tilt), (320, 165 + brow_tilt), 12)
+        pygame.draw.line(screen, BLUE, (480, 165 + brow_tilt), (590, 175 + brow_tilt), 12)
 
     # Mund – freundlich, sauber und leicht lächelnd
     mouth_points = [(280, 410), (340, 440), (400, 455), (460, 440), (520, 410)]
-    pygame.draw.lines(screen, CYAN, False, mouth_points, 12)
+    pygame.draw.lines(screen, BLUE, False, mouth_points, 12)
 
 
 def main():
