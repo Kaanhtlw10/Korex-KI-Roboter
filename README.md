@@ -41,4 +41,4 @@ Das Schwesterprojekt **Lorex** ist ein autonomer Roboter, der Daten mit Korex ü
 
 ## Status
 
-In Entwicklung. Die Kamera wird gerade eingebaut.
+In Entwicklung...
